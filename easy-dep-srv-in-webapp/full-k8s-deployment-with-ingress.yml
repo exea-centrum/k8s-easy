@@ -1,0 +1,57 @@
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    kubernetes.io/name: "fun-apache"
+  name: "fun-apache-svc"
+  namespace: "{{ namespace }}"
+spec:
+  type: LoadBalancer # NodePort might work for your lab as well. 
+  # If you are using the Ingress below the type should be ClusterIP
+  ports:
+  - port: 80 # DO NOT USE 80 IF YOU ALREADY HAVE https://kubernetes.github.io/ingress-nginx/deploy
+    targetPort: 8080
+    name: http
+  selector:
+    k8s-app: "fun-apache"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "fun-apache"
+  namespace: "{{ namespace }}"
+spec:
+  selector:
+    matchLabels:
+      k8s-app: "fun-apache"
+  replicas: 1
+  template: # template for Pod
+    metadata:
+      labels:
+        k8s-app: "fun-apache"
+    spec:
+      containers:
+      - name: "fun-apache"
+        image: apache2:1.2.3
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fun-apache-ingress
+  namespace: "{{ namespace }}"
+spec:
+  rules:
+  - host: "yourhost"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: "fun-apache-svc"
+            port: 
